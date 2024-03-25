@@ -1,0 +1,23 @@
+{
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true,
+    "source.fixAll.format": true
+  },
+  "editor.rulers": [80],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "files.trimTrailingWhitespace": true,
+  "javascript.preferences.quoteStyle": "single",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.associations": {
+    "*.shot": "jest-snapshot"
+  },
+  "vsicons.associations.files": [
+    {
+      "icon": "jest_snapshot",
+      "extensions": [".shot"],
+      "extends": "jest_snapshot"
+    }
+  ]
+}
