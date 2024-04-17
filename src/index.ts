@@ -2,9 +2,10 @@ import 'dotenv/config'
 
 import config from 'config'
 import app from './app'
+import logger from './utils/logger'
 
 const port: number = config.get('server.port')
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`)
+  logger.info(`Server is running on http://localhost:${port}`)
 })
