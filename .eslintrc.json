@@ -14,7 +14,7 @@
   "rules": {
     "quotes": [2, "single", { "avoidEscape": true }],
     "no-multi-spaces": 1,
-    "comma-dangle": 1,
+    "comma-dangle": 0,
     "no-underscore-dangle": 1,
     "no-param-reassign": 1,
     "no-return-assign": 0,
@@ -30,7 +30,10 @@
   },
   "settings": {
     "import/resolver": {
-      "typescript": {}
+      "typescript": {},
+      "node": {
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      }
     },
     "import/parsers": {
       "@typescript-eslint/parser": [".ts"]

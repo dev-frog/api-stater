@@ -1,4 +1,10 @@
-const data: number[] = [1, 2, 3, 4, 5]
-const result = data.map((item) => item * 2)
+import 'dotenv/config'
 
-console.log(result)
+import config from 'config'
+import app from './app'
+
+const port: number = config.get('server.port')
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`)
+})
