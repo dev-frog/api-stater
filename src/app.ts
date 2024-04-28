@@ -1,4 +1,5 @@
 import express, { Express, Request, Response } from 'express'
+import status from 'http-status'
 import helmet from 'helmet'
 import cors, { CorsOptions } from 'cors'
 import 'dotenv/config'
@@ -15,7 +16,7 @@ const corsOptions: CorsOptions = {
 app.use(cors(corsOptions))
 
 app.get('/', (req: Request, res: Response) => {
-  res.send('Hello World')
+  res.status(status.OK).json({ message: 'Hello World' })
 })
 
 export default app
