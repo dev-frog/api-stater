@@ -5,6 +5,7 @@ import cors, { CorsOptions } from 'cors'
 import 'dotenv/config'
 
 import router from './routes'
+import { errorHandler, notFoundHandler } from './middleware/error-handler'
 
 const app: Express = express()
 
@@ -22,5 +23,7 @@ app.get('/', (req: Request, res: Response) => {
 })
 
 app.use('/api/v1', router)
+app.use(notFoundHandler)
+app.use(errorHandler)
 
 export default app
