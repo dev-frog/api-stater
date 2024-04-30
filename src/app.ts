@@ -16,7 +16,7 @@ const corsOptions: CorsOptions = {
 app.use(cors(corsOptions))
 
 app.get('/', (req: Request, res: Response) => {
-  res.status(status.OK).json({ message: 'Hello World' })
+  res.status(status.OK).json({ message: 'Hello World', success: true })
 })
 
 export default app
