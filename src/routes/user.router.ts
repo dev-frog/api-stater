@@ -1,14 +1,11 @@
 import express from 'express'
-import config from 'config'
 import SendResponse from '../utils/sendResponse'
-import user from './user.router'
 
 const router = express.Router()
 
-const PROJECT_NAME: string = config.get('db.project_name')
 /**
  * @openapi
- * '/api/v1/':
+ * '/users/':
  *  post:
  *     tags:
  *     - User
@@ -31,8 +28,6 @@ const PROJECT_NAME: string = config.get('db.project_name')
  *      400:
  *        description: Bad request
  */
-router.get('/', (req, res) => SendResponse.success({ res, message: `${PROJECT_NAME} api root directory` }))
-
-router.use('/user', user)
+router.get('/', (req, res) => SendResponse.success({ res, message: 'user api root directory' }))
 
 export default router

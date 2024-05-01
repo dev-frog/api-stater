@@ -1,11 +1,12 @@
 import express, { Express, Request, Response } from 'express'
-import status from 'http-status'
 import helmet from 'helmet'
 import cors, { CorsOptions } from 'cors'
 import 'dotenv/config'
 
 import router from './routes'
 import { errorHandler, notFoundHandler } from './middleware/error-handler'
+import SendResponse from './utils/sendResponse'
+import swaggerDocs from './utils/swagger'
 
 const app: Express = express()
 
@@ -18,11 +19,12 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions))
 
-app.get('/', (req: Request, res: Response) => {
-  res.status(status.OK).json({ message: 'Hello World', success: true })
-})
+app.get('/', (req: Request, res: Response) => SendResponse.success({ res, message: 'dev-frog api stater kit' }))
 
 app.use('/api/v1', router)
+
+swaggerDocs(app)
+
 app.use(notFoundHandler)
 app.use(errorHandler)
 
