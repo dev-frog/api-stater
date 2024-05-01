@@ -1,44 +1,5 @@
 import { object, string, TypeOf } from 'zod'
 
-/**
- * @openapi
- * components:
- *  schemas:
- *    CreateUserInput:
- *      type: object
- *      required:
- *        - email
- *        - name
- *        - password
- *        - passwordConfirmation
- *      properties:
- *        email:
- *          type: string
- *          default: jane.doe@example.com
- *        name:
- *          type: string
- *          default: Jane Doe
- *        password:
- *          type: string
- *          default: stringPassword123
- *        passwordConfirmation:
- *          type: string
- *          default: stringPassword123
- *    CreateUserResponse:
- *      type: object
- *      properties:
- *        email:
- *          type: string
- *        name:
- *          type: string
- *        _id:
- *          type: string
- *        createdAt:
- *          type: string
- *        updatedAt:
- *          type: string
- */
-
 export const createUserSchema = object({
   body: object({
     name: string({
@@ -46,17 +7,33 @@ export const createUserSchema = object({
     }),
     password: string({
       required_error: 'Password is required'
-    }).min(6, 'Password too short - should be 6 chars minimum'),
+    })
+      .min(8, 'Password must be at least 6 characters')
+      .max(20, 'Password must be at most 20 characters')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,20})/,
+        'Password must contain at least one uppercase, one lowercase, one number and one special character'
+      ),
     passwordConfirmation: string({
-      required_error: 'passwordConfirmation is required'
-    }),
+      required_error: 'Password confirmation is required'
+    })
+      .min(8, 'Password must be at least 6 characters')
+      .max(20, 'Password must be at most 20 characters')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,20})/,
+        'Password must contain at least one uppercase, one lowercase, one number and one special character'
+      ),
     email: string({
       required_error: 'Email is required'
-    }).email('Not a valid email')
+    }).email('Not a valid email'),
+
+    phone: string({
+      required_error: 'Phone is required'
+    }).regex(/^(\+\d{1,3}[- ]?)?\d{10}$/, 'Phone number must be valid')
   }).refine((data) => data.password === data.passwordConfirmation, {
     message: 'Passwords do not match',
     path: ['passwordConfirmation']
   })
 })
 
-export type CreateUserInput = Omit<TypeOf<typeof createUserSchema>, 'body.passwordConfirmation'>
+export type CreateUserInputType = TypeOf<typeof createUserSchema>['body']

@@ -24,6 +24,7 @@
     "no-unreachable": 1,
     "no-unused-vars": 1,
     "import/extensions": 0,
+    "max-classes-per-file": 0,
     "@typescript-eslint/no-redeclare": 1,
     "no-console": 1,
     "prettier/prettier": "error"

@@ -35,6 +35,7 @@
     "typescript-eslint": "^7.3.1"
   },
   "dependencies": {
+    "@typegoose/typegoose": "^12.4.0",
     "config": "^3.3.11",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
