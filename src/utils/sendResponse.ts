@@ -32,4 +32,9 @@ export default class SendResponse {
   static deleted(props: SendResponseProps<undefined>) {
     return this.sendResponse(props.res, status.OK, props)
   }
+
+  // error response
+  static error(props: SendResponseProps<undefined>) {
+    return this.sendResponse(props.res, status.BAD_REQUEST, props)
+  }
 }

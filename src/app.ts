@@ -7,6 +7,7 @@ import router from './routes'
 import { errorHandler, notFoundHandler } from './middleware/error-handler'
 import SendResponse from './utils/sendResponse'
 import swaggerDocs from './utils/swagger'
+import deserializeUser from './middleware/deserializeUser'
 
 const app: Express = express()
 
@@ -18,6 +19,8 @@ const corsOptions: CorsOptions = {
 }
 
 app.use(cors(corsOptions))
+
+app.use(deserializeUser)
 
 app.get('/', (req: Request, res: Response) => SendResponse.success({ res, message: 'dev-frog api stater kit' }))
 

@@ -2,8 +2,8 @@
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit",
-    "source.fixAll.format": "explicit"
+    "source.fixAll.eslint": "always",
+    "source.fixAll.format": "always"
   },
   "editor.rulers": [80],
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
