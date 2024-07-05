@@ -1,100 +1,241 @@
 import { Request, Response } from 'express'
-import { z } from 'zod'
+import { get } from 'lodash'
+import { v4 as uuid } from 'uuid'
 import SendResponse from '../utils/sendResponse'
+import SendErrorResponse from '../utils/sendErrorResponse'
+import { privateFields } from '../model'
+import stripPrivateFields from '../utils/privateDataFilter'
+import { CreateUserInputType, ForgotPasswordInputType, LoginInputType, VerificationCodeInputType } from '../schemas'
+import {
+  findSessionById,
+  findUserByEmail,
+  findUserById,
+  registerUser,
+  setUserPasswordResetCode,
+  setUserVerificationCode,
+  singAccessToken,
+  singRefreshToken,
+  verifyUser
+} from '../services'
+import logger from '../utils/logger'
+import { verifyJWT } from '../utils/jwt'
 
-export async function handleForgotPassword(req: Request, res: Response) {
-  const { email } = req.body
+export async function createUserController(
+  req: Request<Record<string, never>, Record<string, never>, CreateUserInputType>,
+  res: Response
+) {
+  const data = req.body
   try {
-    SendResponse.success({
-      res,
-      data: {
-        email
-      },
-      message: 'Password reset link sent successfully'
-    })
-  } catch (e: unknown) {
-    if (e instanceof z.ZodError) {
-      SendResponse.error({
-        res,
-        message: e.errors[0].message
-      })
+    // check if user exists in the database using email
+    const user = await findUserByEmail(data.email)
+    // if user exists, return error
+    if (user) {
+      SendErrorResponse.error({ res, message: 'user already exists' })
+      return
     }
-    SendResponse.error({
-      res,
-      message: 'Something went wrong'
-    })
+    const newUser = await registerUser(data)
+    const response = stripPrivateFields(newUser, [...privateFields])
+
+    // sendVerificationEmail(newUser.name as string, newUser.email as string, newUser.verificationCode as string)
+
+    SendResponse.success({ res, data: response, message: 'user created' })
+  } catch (error: unknown) {
+    SendErrorResponse.error({ res, message: (error as Error).message })
   }
 }
 
-export async function handleResetPassword(req: Request, res: Response) {
+export async function loginController(
+  req: Request<Record<string, never>, Record<string, never>, LoginInputType>,
+  res: Response
+) {
   const { email, password } = req.body
   try {
-    SendResponse.success({
-      res,
-      data: {
-        email,
-        password
-      },
-      message: 'Password reset successfully'
-    })
-  } catch (e: unknown) {
-    if (e instanceof z.ZodError) {
-      SendResponse.error({
-        res,
-        message: e.errors[0].message
-      })
+    const user = await findUserByEmail(email)
+
+    if (!user) {
+      SendErrorResponse.error({ res, message: 'Incorrect email or password' })
+      return
     }
-    SendResponse.error({
-      res,
-      message: 'Something went wrong'
-    })
+
+    if (!user.verified) {
+      SendErrorResponse.error({ res, message: 'Please verify your email to login' })
+      return
+    }
+
+    if (user.isBlocked) {
+      SendErrorResponse.error({ res, message: 'Your account is blocked' })
+      return
+    }
+
+    const isMatch = await user.validatePassword(password)
+
+    if (!isMatch) {
+      SendErrorResponse.error({ res, message: 'Incorrect email or password' })
+      return
+    }
+
+    // sing a access token
+    const accessToken = singAccessToken(user)
+    const refreshToken = await singRefreshToken({ userId: user.id })
+
+    SendResponse.success({ res, data: { accessToken, refreshToken }, message: 'login successful' })
+  } catch (error: unknown) {
+    SendErrorResponse.error({ res, message: (error as Error).message })
   }
 }
 
-export async function verifyEmail(req: Request, res: Response) {
-  const { email } = req.body
+export async function verifyEmailController(
+  req: Request<Record<string, never>, Record<string, never>, VerificationCodeInputType>,
+  res: Response
+) {
+  const { email, token: verifyCode } = req.body
   try {
-    SendResponse.success({
-      res,
-      data: {
-        email
-      },
-      message: 'User verified successfully'
-    })
-  } catch (e: unknown) {
-    if (e instanceof z.ZodError) {
-      SendResponse.error({
-        res,
-        message: e.errors[0].message
-      })
+    const user = await findUserByEmail(email)
+    if (!user) {
+      SendErrorResponse.error({ res, message: 'Incorrect email or link expired' })
+      return
     }
-    SendResponse.error({
-      res,
-      message: 'Something went wrong'
-    })
+
+    if (user.verificationCode !== verifyCode) {
+      SendErrorResponse.error({ res, message: 'Incorrect verification code or email' })
+      return
+    }
+
+    if (user.verified) {
+      SendErrorResponse.error({ res, message: 'Email already verified' })
+      return
+    }
+
+    if (user.verificationCodeExpires && user.verificationCodeExpires < new Date()) {
+      SendErrorResponse.error({ res, message: 'Verification code expired' })
+      return
+    }
+
+    await verifyUser(email)
+
+    SendResponse.success({ res, message: 'email successfully verified' })
+  } catch (error: unknown) {
+    SendErrorResponse.error({ res, message: (error as Error).message })
   }
 }
 
-export async function resendVerificationEmail(req: Request, res: Response) {
-  const { email } = req.body
+export async function resendVerificationCodeController(
+  req: Request<Record<string, never>, Record<string, never>, Record<string, never>>,
+  res: Response
+) {
+  const email = get(req, 'body.email')
+  const message = 'If a user with this email exists, we have sent a verification code to your email'
+
+  if (typeof email !== 'string') {
+    SendErrorResponse.error({ res, message })
+    return
+  }
+
   try {
-    SendResponse.success({
-      res,
-      data: {
-        email
-      },
-      message: 'Verification email sent successfully'
-    })
-  } catch (e: unknown) {
-    if (e instanceof z.ZodError) {
-      SendResponse.error({
-        res,
-        message: e.errors[0].message
-      })
+    const user = await findUserByEmail(email)
+
+    if (!user) {
+      logger.error(`User with email ${email} not found`)
+      SendResponse.success({ res, message })
+      return
     }
-    SendResponse.error({
-      res,
-      message: 'Something went wrong'
-    })
+
+    if (user.verified) {
+      SendErrorResponse.error({ res, message: 'Email already verified' })
+    }
+
+    if (user.verificationCodeExpires && user.verificationCodeExpires > new Date()) {
+      SendErrorResponse.error({ res, message: 'Verification code not expired' })
+    }
+    const verificationCode = uuid()
+    await setUserVerificationCode(user._id.toString(), verificationCode)
+
+    // sendVerificationEmail(user.name as string, user.email as string, user.verificationCode as string)
+
+    SendResponse.success({ res, message, data: { email } })
+  } catch (error: unknown) {
+    SendErrorResponse.error({ res, message: (error as Error).message })
+  }
+}
+
+export async function forgetPasswordController(
+  req: Request<Record<string, never>, Record<string, never>, ForgotPasswordInputType>,
+  res: Response
+) {
+  const email = get(req, 'body.email')
+  const message = 'If a user with this email exists, we have sent a reset password link to your email'
+
+  if (typeof email !== 'string') {
+    SendErrorResponse.error({ res, message })
+    return
+  }
+
+  try {
+    const user = await findUserByEmail(email)
+
+    if (!user) {
+      logger.error(`User with email ${email} not found`)
+      SendResponse.success({ res, message })
+      return
+    }
+
+    if (!user.verified) {
+      SendErrorResponse.error({ res, message: 'Please verify your email to reset password' })
+      return
+    }
+    // password code expires in 5 minutes
+    const expires = new Date(Date.now() + 5 * 60000)
+    const code = uuid()
+
+    await setUserPasswordResetCode(user.id, code, expires)
+
+    // send email with password reset link
+    // await sendPasswordResetEmail(user.name as string, user.email as string, code)
+    SendResponse.success({ res, message })
+  } catch (error: unknown) {
+    SendErrorResponse.error({ res, message: (error as Error).message })
+  }
+}
+
+export async function refreshTokenController(
+  req: Request<Record<string, never>, Record<string, never>, Record<string, never>>,
+  res: Response
+) {
+  const oldRefreshToken = get(req, 'headers.x-refresh')
+
+  if (typeof oldRefreshToken !== 'string') {
+    SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+    return
+  }
+  try {
+    // verify refresh token
+    const decoded = verifyJWT<{ session: string }>(oldRefreshToken, 'auth.refreshTokenPrivateKey')
+
+    if (!decoded) {
+      SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+      return
+    }
+    // get session id from refresh token
+    const session = await findSessionById(decoded.session)
+    // get session
+    if (!session) {
+      SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+      return
+    }
+    // get user from session
+    const user = await findUserById(String(session.user))
+
+    if (!user) {
+      SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+      return
+    }
+
+    // sing a access token
+    const accessToken = singAccessToken(user)
+    const refreshToken = await singRefreshToken({ userId: user.id })
+
+    SendResponse.success({ res, data: { accessToken, refreshToken }, message: 'refresh token' })
+  } catch (error: unknown) {
+    SendErrorResponse.error({ res, message: (error as Error).message })
   }
 }

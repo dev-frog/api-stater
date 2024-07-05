@@ -4,7 +4,7 @@ import logger from './logger'
 
 export function singJWT(
   object: Record<string, unknown>,
-  keyName: 'accessTokenPrivateKey' | 'refreshTokenPrivateKey',
+  keyName: 'auth.accessTokenPrivateKey' | 'auth.refreshTokenPrivateKey',
   options?: jwt.SignOptions | undefined
 ): string | null {
   try {
@@ -17,18 +17,20 @@ export function singJWT(
 
     return token
   } catch (error) {
-    logger.error(`Error signing JWT: ${error}`)
+    logger.error(error)
     return null
   }
 }
 
-export function verifyJWT<T>(token: string, keyName: 'accessTokenPublicKey' | 'refreshTokenPublicKey'): T | null {
+export function verifyJWT<T>(
+  token: string,
+  keyName: 'auth.accessTokenPrivateKey' | 'auth.refreshTokenPrivateKey'
+): T | null {
   const publicKey = Buffer.from(config.get<string>(keyName), 'base64').toString('ascii')
   try {
     const decoded = jwt.verify(token, publicKey)
     return decoded as T
   } catch (error) {
-    logger.error(`Error verifying JWT: ${error}`)
     return null
   }
 }

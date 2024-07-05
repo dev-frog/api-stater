@@ -17,7 +17,8 @@ const validateResource = (schema: AnyZodObject) => async (req: Request, res: Res
     }
     return res.status(status.BAD_REQUEST).send({ error: (e as Error).message, success: false })
   }
-  return next()
+
+  return null
 }
 
 export default validateResource
