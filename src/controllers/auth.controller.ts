@@ -2,28 +2,59 @@ import { Request, Response } from 'express'
 import { get } from 'lodash'
 import { v4 as uuid } from 'uuid'
 import SendResponse from '../utils/sendResponse'
+import UserCreationError from '../utils/error'
 import SendErrorResponse from '../utils/sendErrorResponse'
-import { privateFields } from '../model'
-import stripPrivateFields from '../utils/privateDataFilter'
 import { CreateUserInputType, ForgotPasswordInputType, LoginInputType, VerificationCodeInputType } from '../schemas'
+import { findUserByEmail, findUserById } from '../services/user.service'
 import {
   findSessionById,
-  findUserByEmail,
-  findUserById,
   registerUser,
   setUserPasswordResetCode,
   setUserVerificationCode,
   singAccessToken,
   singRefreshToken,
   verifyUser
-} from '../services'
+} from '../services/auth.service'
 import logger from '../utils/logger'
 import { verifyJWT } from '../utils/jwt'
+import { z } from 'zod'
+import stripPrivateFields from '../utils/privateDataFilter'
+import { privateFields } from '../model'
 
-export async function createUserController(
+export async function handleUserRegister(
   req: Request<Record<string, never>, Record<string, never>, CreateUserInputType>,
   res: Response
 ) {
+  const { email, password } = req.body
+  try {
+    SendResponse.success({
+      res,
+      data: {
+        email,
+        password
+      },
+      message: 'User created successfully'
+    })
+  } catch (e: unknown) {
+    if (e instanceof z.ZodError) {
+      SendResponse.error({
+        res,
+        message: e.errors[0].message
+      })
+    }
+    if (e instanceof UserCreationError) {
+      SendResponse.error({
+        res,
+        message: e.message
+      })
+    }
+    SendResponse.error({
+      res,
+      message: 'Something went wrong'
+    })
+  }
+}
+export async function handleForgotPassword(req: Request, res: Response) {
   const data = req.body
   try {
     // check if user exists in the database using email

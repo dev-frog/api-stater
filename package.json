@@ -39,8 +39,10 @@
   },
   "dependencies": {
     "@typegoose/typegoose": "^12.4.0",
+    "@types/cookie-parser": "^1.4.7",
     "argon2": "^0.40.3",
     "config": "^3.3.11",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.1",
