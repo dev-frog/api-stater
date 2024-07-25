@@ -1,13 +1,12 @@
 import express from 'express'
 import {
   handleForgotPassword,
-  handleResetPassword,
   handleUserRegister,
-  resendVerificationEmail,
-  verifyEmail
+  resendVerificationCodeController,
+  verifyEmailController
 } from '../controllers/auth.controller'
 import validateResource from '../middleware/validateResource'
-import { createUserSchema } from '../schemas/user.schema'
+import { createUserSchema } from '../schemas'
 
 const router = express.Router()
 
@@ -16,9 +15,8 @@ router.post('/sing-up', validateResource(createUserSchema), handleUserRegister)
 router.post('/refresh-token', validateResource(createUserSchema), handleUserRegister)
 
 router.post('/forgot-password', handleForgotPassword)
-router.post('/reset-password', handleResetPassword)
-router.post('/verify-email', verifyEmail)
-router.post('/resend-verification-email', resendVerificationEmail)
+router.post('/verify-email', verifyEmailController)
+router.post('/resend-verification-email', resendVerificationCodeController)
 
 // oauth routes
 router.get('/oauth/google', handleUserRegister)
