@@ -24,4 +24,8 @@ export default class SendErrorResponse {
   static conflict<T>(props: ErrorResponseProps<T>) {
     return this.sendErrorResponse(props.res, status.CONFLICT, props)
   }
+
+  static unauthorized<T>(props: ErrorResponseProps<T>) {
+    return this.sendErrorResponse(props.res, status.UNAUTHORIZED, props)
+  }
 }

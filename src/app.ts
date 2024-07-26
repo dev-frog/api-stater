@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler'
 import SendResponse from './utils/sendResponse'
 import swaggerDocs from './utils/swagger'
 import deserializeUser from './middleware/deserializeUser'
+import cookieParser from 'cookie-parser'
 
 const app: Express = express()
 
@@ -19,6 +20,7 @@ const corsOptions: CorsOptions = {
 }
 
 app.use(cors(corsOptions))
+app.use(cookieParser())
 
 app.use(deserializeUser)
 

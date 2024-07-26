@@ -21,6 +21,8 @@ export const privateFields = [
   'verified',
   'isDeleted',
   'isBlocked',
+  'passwordResetCode',
+  'passwordResetCodeExpires',
   'verificationCodeExpires',
   'verificationCode',
   '__v'

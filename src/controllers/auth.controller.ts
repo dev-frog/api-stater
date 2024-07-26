@@ -18,23 +18,32 @@ import {
 import logger from '../utils/logger'
 import { verifyJWT } from '../utils/jwt'
 import { z } from 'zod'
-import stripPrivateFields from '../utils/privateDataFilter'
-import { privateFields } from '../model'
 
-export async function handleUserRegister(
+import { privateFields } from '../model'
+import { sendVerificationEmail } from '../utils/sendEmail'
+import { stripPrivateFields } from '../utils/privateDataFilter'
+
+// TODO: DONE.
+export async function userRegisterController(
   req: Request<Record<string, never>, Record<string, never>, CreateUserInputType>,
   res: Response
 ) {
-  const { email, password } = req.body
+  const data = req.body
+
   try {
-    SendResponse.success({
-      res,
-      data: {
-        email,
-        password
-      },
-      message: 'User created successfully'
-    })
+    const user = await findUserByEmail(data.email)
+
+    if (user) {
+      SendErrorResponse.error({ res, message: 'user already exists' })
+      return
+    }
+
+    const newUser = await registerUser(data)
+    const response = stripPrivateFields(newUser, [...privateFields])
+
+    sendVerificationEmail(newUser.name as string, newUser.email as string, newUser.verificationCode as string)
+
+    SendResponse.success({ res, data: response, message: 'User Created successfully' })
   } catch (e: unknown) {
     if (e instanceof z.ZodError) {
       SendResponse.error({
@@ -54,6 +63,7 @@ export async function handleUserRegister(
     })
   }
 }
+
 export async function handleForgotPassword(req: Request, res: Response) {
   const data = req.body
   try {
@@ -75,7 +85,7 @@ export async function handleForgotPassword(req: Request, res: Response) {
   }
 }
 
-export async function loginController(
+export async function userLoginController(
   req: Request<Record<string, never>, Record<string, never>, LoginInputType>,
   res: Response
 ) {
@@ -109,12 +119,17 @@ export async function loginController(
     const accessToken = singAccessToken(user)
     const refreshToken = await singRefreshToken({ userId: user.id })
 
-    SendResponse.success({ res, data: { accessToken, refreshToken }, message: 'login successful' })
+    // save as cookie
+    res.cookie('ACCESS_TOKEN', accessToken, { httpOnly: true, secure: true })
+    res.cookie('REFRESH_TOKEN', refreshToken, { httpOnly: true, secure: true })
+
+    SendResponse.success({ res, message: 'User login successfully' })
   } catch (error: unknown) {
     SendErrorResponse.error({ res, message: (error as Error).message })
   }
 }
 
+// TODO: DONE.
 export async function verifyEmailController(
   req: Request<Record<string, never>, Record<string, never>, VerificationCodeInputType>,
   res: Response
