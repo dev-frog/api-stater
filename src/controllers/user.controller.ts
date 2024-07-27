@@ -3,12 +3,12 @@ import { z } from 'zod'
 import SendResponse from '../utils/sendResponse'
 
 export async function getUser(req: Request, res: Response) {
-  const { email } = req.body
+  const { email } = res.locals.user
   try {
     SendResponse.success({
       res,
       data: {
-        email
+        email: email
       },
       message: 'User fetched successfully'
     })

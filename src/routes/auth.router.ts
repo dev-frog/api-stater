@@ -1,28 +1,33 @@
 import express from 'express'
 import {
   handleForgotPassword,
-  handleUserRegister,
+  userLoginController,
   resendVerificationCodeController,
-  verifyEmailController
+  userRegisterController,
+  verifyEmailController,
+  logoutController,
+  refreshTokenController
 } from '../controllers/auth.controller'
 import validateResource from '../middleware/validateResource'
-import { createUserSchema } from '../schemas'
+import { createUserSchema, LoginInputSchema } from '../schemas'
 
 const router = express.Router()
 
-router.post('/sing-in', validateResource(createUserSchema), handleUserRegister)
-router.post('/sing-up', validateResource(createUserSchema), handleUserRegister)
-router.post('/refresh-token', validateResource(createUserSchema), handleUserRegister)
+router.post('/sing-in', validateResource(LoginInputSchema), userLoginController)
+router.post('/sing-up', validateResource(createUserSchema), userRegisterController)
+router.post('/logout', logoutController)
+
+router.post('/refresh-token', refreshTokenController)
 
 router.post('/forgot-password', handleForgotPassword)
 router.post('/verify-email', verifyEmailController)
 router.post('/resend-verification-email', resendVerificationCodeController)
 
 // oauth routes
-router.get('/oauth/google', handleUserRegister)
-router.get('/oauth/google/callback', handleUserRegister)
+router.get('/oauth/google')
+router.get('/oauth/google/callback')
 
-router.get('/oauth/facebook', handleUserRegister)
-router.get('/oauth/facebook/callback', handleUserRegister)
+router.get('/oauth/facebook')
+router.get('/oauth/facebook/callback')
 
 export default router
