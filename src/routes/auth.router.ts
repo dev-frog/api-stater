@@ -4,7 +4,9 @@ import {
   userLoginController,
   resendVerificationCodeController,
   userRegisterController,
-  verifyEmailController
+  verifyEmailController,
+  logoutController,
+  refreshTokenController
 } from '../controllers/auth.controller'
 import validateResource from '../middleware/validateResource'
 import { createUserSchema, LoginInputSchema } from '../schemas'
@@ -13,7 +15,9 @@ const router = express.Router()
 
 router.post('/sing-in', validateResource(LoginInputSchema), userLoginController)
 router.post('/sing-up', validateResource(createUserSchema), userRegisterController)
-router.post('/refresh-token')
+router.post('/logout', logoutController)
+
+router.post('/refresh-token', refreshTokenController)
 
 router.post('/forgot-password', handleForgotPassword)
 router.post('/verify-email', verifyEmailController)

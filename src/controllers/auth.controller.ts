@@ -280,8 +280,18 @@ export async function refreshTokenController(
     const accessToken = singAccessToken(user)
     const refreshToken = await singRefreshToken({ userId: user.id })
 
-    SendResponse.success({ res, data: { accessToken, refreshToken }, message: 'refresh token' })
+    // save as cookie
+    res.cookie('ACCESS_TOKEN', accessToken, { httpOnly: true, secure: true })
+    res.cookie('REFRESH_TOKEN', refreshToken, { httpOnly: true, secure: true })
+
+    SendResponse.success({ res, message: 'Token refreshed successfully' })
   } catch (error: unknown) {
     SendErrorResponse.error({ res, message: (error as Error).message })
   }
+}
+
+export async function logoutController(req: Request, res: Response) {
+  res.clearCookie('ACCESS_TOKEN')
+  res.clearCookie('REFRESH_TOKEN')
+  SendResponse.success({ res, message: 'Logout successfully' })
 }
