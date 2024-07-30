@@ -243,52 +243,51 @@ export async function forgetPasswordController(
   }
 }
 
-export async function refreshTokenController(
-  req: Request<Record<string, never>, Record<string, never>, Record<string, never>>,
-  res: Response
-) {
-  const oldRefreshToken = get(req, 'headers.x-refresh')
+// export async function refreshTokenController(token: string,
+// ) {
+//   const oldRefreshToken = token
 
-  if (typeof oldRefreshToken !== 'string') {
-    SendErrorResponse.error({ res, message: 'Invalid refresh token' })
-    return
-  }
-  try {
-    // verify refresh token
-    const decoded = verifyJWT<{ session: string }>(oldRefreshToken, 'auth.refreshTokenPrivateKey')
+//   if (typeof oldRefreshToken !== 'string') {
+//     SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+//     return
+//   }
+//   try {
+//     // verify refresh token
+//     const decoded = verifyJWT<{ session: string }>(oldRefreshToken, 'auth.refreshTokenPrivateKey')
 
-    if (!decoded) {
-      SendErrorResponse.error({ res, message: 'Invalid refresh token' })
-      return
-    }
-    // get session id from refresh token
-    const session = await findSessionById(decoded.session)
-    // get session
-    if (!session) {
-      SendErrorResponse.error({ res, message: 'Invalid refresh token' })
-      return
-    }
-    // get user from session
-    const user = await findUserById(String(session.user))
+//     if (!decoded.payload) {
+//       SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+//       return
+//     }
 
-    if (!user) {
-      SendErrorResponse.error({ res, message: 'Invalid refresh token' })
-      return
-    }
+//     // get session id from refresh token
+//     const session = await findSessionById(decoded.payload.session)
+//     // get session
+//     if (!session) {
+//       SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+//       return
+//     }
+//     // get user from session
+//     const user = await findUserById(String(session.user))
 
-    // sing a access token
-    const accessToken = singAccessToken(user)
-    const refreshToken = await singRefreshToken({ userId: user.id })
+//     if (!user) {
+//       SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+//       return
+//     }
 
-    // save as cookie
-    res.cookie('ACCESS_TOKEN', accessToken, { httpOnly: true, secure: true })
-    res.cookie('REFRESH_TOKEN', refreshToken, { httpOnly: true, secure: true })
+//     // sing a access token
+//     const accessToken = singAccessToken(user)
+//     const refreshToken = await singRefreshToken({ userId: user.id })
 
-    SendResponse.success({ res, message: 'Token refreshed successfully' })
-  } catch (error: unknown) {
-    SendErrorResponse.error({ res, message: (error as Error).message })
-  }
-}
+//     // save as cookie
+//     res.cookie('ACCESS_TOKEN', accessToken, { httpOnly: true, secure: true })
+//     res.cookie('REFRESH_TOKEN', refreshToken, { httpOnly: true, secure: true })
+
+//     SendResponse.success({ res, message: 'Token refreshed successfully' })
+//   } catch (error: unknown) {
+//     SendErrorResponse.error({ res, message: (error as Error).message })
+//   }
+// }
 
 export async function logoutController(req: Request, res: Response) {
   res.clearCookie('ACCESS_TOKEN')

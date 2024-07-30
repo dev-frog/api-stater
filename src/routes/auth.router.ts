@@ -5,8 +5,7 @@ import {
   resendVerificationCodeController,
   userRegisterController,
   verifyEmailController,
-  logoutController,
-  refreshTokenController
+  logoutController
 } from '../controllers/auth.controller'
 import validateResource from '../middleware/validateResource'
 import { createUserSchema, LoginInputSchema } from '../schemas'
@@ -17,7 +16,7 @@ router.post('/sign-in', validateResource(LoginInputSchema), userLoginController)
 router.post('/sign-up', validateResource(createUserSchema), userRegisterController)
 router.post('/sign-out')
 
-router.post('/refresh-token', refreshTokenController)
+// router.post('/refresh-token', refreshTokenController)
 
 router.post('/forgot-password', handleForgotPassword)
 router.post('/verify-email', verifyEmailController)

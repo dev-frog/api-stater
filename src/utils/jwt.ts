@@ -1,5 +1,5 @@
 import config from 'config'
-import jwt from 'jsonwebtoken'
+import jwt, { TokenExpiredError } from 'jsonwebtoken'
 import logger from './logger'
 
 export function singJWT(
@@ -25,12 +25,15 @@ export function singJWT(
 export function verifyJWT<T>(
   token: string,
   keyName: 'auth.accessTokenPrivateKey' | 'auth.refreshTokenPrivateKey'
-): T | null {
+): { payload: T | null; expired: boolean } {
   const publicKey = Buffer.from(config.get<string>(keyName), 'base64').toString('ascii')
   try {
     const decoded = jwt.verify(token, publicKey)
-    return decoded as T
+    return { payload: decoded as T, expired: false }
   } catch (error) {
-    return null
+    if (error instanceof TokenExpiredError) {
+      return { payload: null, expired: true }
+    }
+    return { payload: null, expired: false }
   }
 }
