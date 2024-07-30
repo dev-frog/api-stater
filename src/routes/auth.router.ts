@@ -13,9 +13,9 @@ import { createUserSchema, LoginInputSchema } from '../schemas'
 
 const router = express.Router()
 
-router.post('/sing-in', validateResource(LoginInputSchema), userLoginController)
-router.post('/sing-up', validateResource(createUserSchema), userRegisterController)
-router.post('/logout', logoutController)
+router.post('/sign-in', validateResource(LoginInputSchema), userLoginController)
+router.post('/sign-up', validateResource(createUserSchema), userRegisterController)
+router.post('/sign-out')
 
 router.post('/refresh-token', refreshTokenController)
 

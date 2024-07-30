@@ -18,7 +18,8 @@ app.use(express.json())
 app.use(helmet())
 
 const corsOptions: CorsOptions = {
-  origin: ['*', 'http://localhost:3000', 'https://localhost:3000', 'http://localhost:300']
+  origin: ['*', 'http://localhost:3001', 'https://localhost:3002', 'http://localhost:3003'],
+  credentials: true
 }
 
 const limiter = rateLimit({
