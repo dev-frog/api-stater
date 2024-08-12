@@ -120,8 +120,20 @@ export async function userLoginController(
     const refreshToken = await singRefreshToken({ userId: user.id })
 
     // save as cookie
-    res.cookie('ACCESS_TOKEN', accessToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 3600000 })
-    res.cookie('REFRESH_TOKEN', refreshToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 3600000 })
+    res.cookie('ACCESS_TOKEN', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 3600000,
+      domain: 'localhost'
+    })
+    res.cookie('REFRESH_TOKEN', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 3600000,
+      domain: 'localhost'
+    })
 
     SendResponse.success({ res, message: 'User login successfully' })
   } catch (error: unknown) {
