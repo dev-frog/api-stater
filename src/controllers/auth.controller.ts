@@ -125,14 +125,14 @@ export async function userLoginController(
       secure: true,
       sameSite: 'strict',
       maxAge: 3600000,
-      domain: 'localhost'
+      domain: '*.localhost'
     })
     res.cookie('REFRESH_TOKEN', refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
       maxAge: 3600000,
-      domain: 'localhost'
+      domain: '*.localhost.com'
     })
 
     SendResponse.success({ res, message: 'User login successfully' })
