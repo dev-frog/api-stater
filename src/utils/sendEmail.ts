@@ -1,8 +1,8 @@
 import nodemailer from 'nodemailer'
-import logger from './logger'
 import config from 'config'
-import { loadTemplate } from './loadTemplate'
 import moment from 'moment'
+import logger from './logger'
+import { loadTemplate } from './loadTemplate'
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -25,7 +25,6 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
     await transporter.sendMail(mailOptions)
     logger.info(`Email sent to ${to}`)
   } catch (error) {
-    console.log(error)
     logger.error(`Error sending email to ${to}`)
   }
 }
@@ -34,7 +33,7 @@ export const sendVerificationEmail = async (username: string, userEmail: string,
   const verificationLink = config.get('auth.verify_email_url') as string
   const BASE_API_URL = config.get('server.host') as string
   const subject = 'Email Verification'
-  const verificationUrl = `${BASE_API_URL}/${verificationLink}/${token}?email=${userEmail}`
+  const verificationUrl = `${BASE_API_URL}/${verificationLink}/?token=${token}`
   const companyName = config.get('company.name') as string
   const copyRightYear = moment().format('YYYY')
   const supportTeamURL = config.get('company.support_url') as string

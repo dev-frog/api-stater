@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { get } from 'lodash'
 import { v4 as uuid } from 'uuid'
+import { z } from 'zod'
 import SendResponse from '../utils/sendResponse'
 import UserCreationError from '../utils/error'
 import SendErrorResponse from '../utils/sendErrorResponse'
@@ -16,12 +17,11 @@ import {
   verifyUser
 } from '../services/auth.service'
 import logger from '../utils/logger'
-import { verifyJWT } from '../utils/jwt'
-import { z } from 'zod'
 
 import { privateFields } from '../model'
 import { sendVerificationEmail } from '../utils/sendEmail'
 import { stripPrivateFields } from '../utils/privateDataFilter'
+import { verifyJWT } from '../utils/jwt'
 
 // TODO: DONE.
 export async function userRegisterController(
@@ -41,7 +41,14 @@ export async function userRegisterController(
     const newUser = await registerUser(data)
     const response = stripPrivateFields(newUser, [...privateFields])
 
-    sendVerificationEmail(newUser.name as string, newUser.email as string, newUser.verificationCode as string)
+    // verification token generation base64 using email and verificationCode
+    // Combine the email and verification code
+    const tokenString = `{ "email": "${newUser.email}", "verifyCode": "${newUser.verificationCode}" }`
+
+    // Encode the combined string in Base64
+    const base64Token = Buffer.from(tokenString).toString('base64')
+
+    sendVerificationEmail(newUser.name as string, newUser.email as string, base64Token as string)
 
     SendResponse.success({ res, data: response, message: 'User Created successfully' })
   } catch (e: unknown) {
@@ -146,7 +153,20 @@ export async function verifyEmailController(
   req: Request<Record<string, never>, Record<string, never>, VerificationCodeInputType>,
   res: Response
 ) {
-  const { email, token: verifyCode } = req.body
+  // const { email, token: verifyCode } = req.body
+  const base64Token = req.query.token as string
+
+  if (typeof base64Token !== 'string') {
+    SendErrorResponse.error({ res, message: 'Invalid token' })
+    return
+  }
+
+  // Step 1: Decode the base64 token
+  const decodedToken = Buffer.from(base64Token, 'base64').toString('ascii')
+
+  // Step 2: Parse the decoded token as JSON
+  const { email, verifyCode } = JSON.parse(decodedToken) as { email: string; verifyCode: string }
+
   try {
     const user = await findUserByEmail(email)
     if (!user) {
@@ -255,51 +275,57 @@ export async function forgetPasswordController(
   }
 }
 
-// export async function refreshTokenController(token: string,
-// ) {
-//   const oldRefreshToken = token
+export async function refreshTokenController(req: Request, res: Response) {
+  const oldRefreshToken = req.cookies.REFRESH_TOKEN
 
-//   if (typeof oldRefreshToken !== 'string') {
-//     SendErrorResponse.error({ res, message: 'Invalid refresh token' })
-//     return
-//   }
-//   try {
-//     // verify refresh token
-//     const decoded = verifyJWT<{ session: string }>(oldRefreshToken, 'auth.refreshTokenPrivateKey')
+  if (typeof oldRefreshToken !== 'string') {
+    SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+    return
+  }
+  try {
+    // verify refresh token
+    const decoded = verifyJWT<{ session: string }>(oldRefreshToken, 'auth.refreshTokenPrivateKey')
 
-//     if (!decoded.payload) {
-//       SendErrorResponse.error({ res, message: 'Invalid refresh token' })
-//       return
-//     }
+    if (!decoded.payload) {
+      SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+      return
+    }
 
-//     // get session id from refresh token
-//     const session = await findSessionById(decoded.payload.session)
-//     // get session
-//     if (!session) {
-//       SendErrorResponse.error({ res, message: 'Invalid refresh token' })
-//       return
-//     }
-//     // get user from session
-//     const user = await findUserById(String(session.user))
+    // get session id from refresh token
+    const session = await findSessionById(decoded.payload.session)
+    // get session
+    if (!session) {
+      SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+      return
+    }
+    // get user from session
+    const user = await findUserById(String(session.user))
 
-//     if (!user) {
-//       SendErrorResponse.error({ res, message: 'Invalid refresh token' })
-//       return
-//     }
+    if (!user) {
+      SendErrorResponse.error({ res, message: 'Invalid refresh token' })
+      return
+    }
 
-//     // sing a access token
-//     const accessToken = singAccessToken(user)
-//     const refreshToken = await singRefreshToken({ userId: user.id })
+    // sing a access token
+    const accessToken = singAccessToken(user)
+    const refreshToken = await singRefreshToken({ userId: user.id })
 
-//     // save as cookie
-//     res.cookie('ACCESS_TOKEN', accessToken, { httpOnly: true, secure: true })
-//     res.cookie('REFRESH_TOKEN', refreshToken, { httpOnly: true, secure: true })
+    // save as cookie
+    // res.cookie('ACCESS_TOKEN', accessToken, { httpOnly: true, secure: true })
+    // res.cookie('REFRESH_TOKEN', refreshToken, { httpOnly: true, secure: true })
 
-//     SendResponse.success({ res, message: 'Token refreshed successfully' })
-//   } catch (error: unknown) {
-//     SendErrorResponse.error({ res, message: (error as Error).message })
-//   }
-// }
+    SendResponse.success({
+      res,
+      data: {
+        accessToken,
+        refreshToken
+      },
+      message: 'Token refreshed successfully'
+    })
+  } catch (error: unknown) {
+    SendErrorResponse.error({ res, message: (error as Error).message })
+  }
+}
 
 export async function logoutController(req: Request, res: Response) {
   res.clearCookie('ACCESS_TOKEN')
